@@ -1,58 +1,33 @@
-"""Attendance Models"""
+"""Attendance Models."""
+from datetime import date, datetime
+
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class AttendanceSession:
-    """A live attendance-taking session."""
+class AttendanceSession(Base, ModelMixin):
+    __tablename__ = 'attendance_sessions'
 
-    def __init__(self, id=None, session_id=None, subject_id=None, class_id=None,
-                 faculty_id=None, attendance_mode='FACE', status='active',
-                 total_students=0, scheduled_date=None, created_at=None):
-        self.id = id
-        self.session_id = session_id
-        self.subject_id = subject_id
-        self.class_id = class_id
-        self.faculty_id = faculty_id
-        self.attendance_mode = attendance_mode
-        self.status = status
-        self.total_students = total_students
-        self.scheduled_date = scheduled_date
-        self.created_at = created_at
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'session_id': self.session_id,
-            'subject_id': self.subject_id,
-            'class_id': self.class_id,
-            'faculty_id': self.faculty_id,
-            'attendance_mode': self.attendance_mode,
-            'status': self.status,
-            'total_students': self.total_students,
-            'scheduled_date': self.scheduled_date,
-            'created_at': self.created_at,
-        }
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String(32), unique=True, nullable=False)
+    subject_id = Column(Integer, ForeignKey('subjects.id'), nullable=False)
+    class_id = Column(Integer, ForeignKey('classes.id'), nullable=False)
+    faculty_id = Column(Integer, nullable=True)
+    attendance_mode = Column(String(16), nullable=False, default='FACE')
+    status = Column(String(16), nullable=False, default='active')
+    total_students = Column(Integer, nullable=False, default=0)
+    scheduled_date = Column(Date, nullable=True)
+    created_at = Column(DateTime, nullable=True, default=datetime.utcnow)
 
 
-class AttendanceRecord:
-    """A single student's attendance for a session."""
+class AttendanceRecord(Base, ModelMixin):
+    __tablename__ = 'attendance_records'
 
-    def __init__(self, id=None, student_id=None, session_id=None, status='PRESENT',
-                 attendance_method='FACE', attendance_date=None, created_at=None):
-        self.id = id
-        self.student_id = student_id
-        self.session_id = session_id
-        self.status = status
-        self.attendance_method = attendance_method
-        self.attendance_date = attendance_date
-        self.created_at = created_at
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'student_id': self.student_id,
-            'session_id': self.session_id,
-            'status': self.status,
-            'attendance_method': self.attendance_method,
-            'attendance_date': self.attendance_date,
-            'created_at': self.created_at,
-        }
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey('attendance_sessions.id'), nullable=False, index=True)
+    status = Column(String(16), nullable=False, default='PRESENT')
+    attendance_method = Column(String(16), nullable=False, default='FACE')
+    attendance_date = Column(Date, nullable=True)
+    created_at = Column(DateTime, nullable=True, default=datetime.utcnow)

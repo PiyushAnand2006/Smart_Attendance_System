@@ -1,42 +1,24 @@
-"""Class & Section Models"""
+"""Class & Section Models."""
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class ClassModel:
-    """Academic class (e.g. Computer Science)."""
+class ClassModel(Base, ModelMixin):
+    __tablename__ = 'classes'
 
-    def __init__(self, id=None, name=None, code=None, department=None,
-                 batch_year=None, is_active=True):
-        self.id = id
-        self.name = name
-        self.code = code
-        self.department = department
-        self.batch_year = batch_year
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'code': self.code,
-            'department': self.department,
-            'batch_year': self.batch_year,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), nullable=False)
+    code = Column(String(32), unique=True, nullable=False)
+    department = Column(String(64), nullable=True)
+    batch_year = Column(Integer, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
-class Section:
-    """Section within a class (e.g. CSE-A)."""
+class Section(Base, ModelMixin):
+    __tablename__ = 'sections'
 
-    def __init__(self, id=None, class_id=None, name=None, is_active=True):
-        self.id = id
-        self.class_id = class_id
-        self.name = name
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'class_id': self.class_id,
-            'name': self.name,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    class_id = Column(Integer, ForeignKey('classes.id'), nullable=False)
+    name = Column(String(32), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)

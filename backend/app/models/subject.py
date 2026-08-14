@@ -1,46 +1,26 @@
-"""Subject Models"""
+"""Subject Models."""
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class Subject:
-    """Subject taught at the college."""
+class Subject(Base, ModelMixin):
+    __tablename__ = 'subjects'
 
-    def __init__(self, id=None, name=None, code=None, department=None,
-                 semester=1, credits=0, is_active=True):
-        self.id = id
-        self.name = name
-        self.code = code
-        self.department = department
-        self.semester = semester
-        self.credits = credits
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'code': self.code,
-            'department': self.department,
-            'semester': self.semester,
-            'credits': self.credits,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), nullable=False)
+    code = Column(String(32), unique=True, nullable=False)
+    department = Column(String(64), nullable=True)
+    semester = Column(Integer, nullable=False, default=1)
+    credits = Column(Integer, nullable=False, default=0)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
-class FacultySubject:
-    """Assignment of a subject to a faculty member."""
+class FacultySubject(Base, ModelMixin):
+    __tablename__ = 'faculty_subjects'
 
-    def __init__(self, id=None, faculty_id=None, subject_id=None, class_id=None, is_active=True):
-        self.id = id
-        self.faculty_id = faculty_id
-        self.subject_id = subject_id
-        self.class_id = class_id
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'faculty_id': self.faculty_id,
-            'subject_id': self.subject_id,
-            'class_id': self.class_id,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    faculty_id = Column(Integer, ForeignKey('faculty.id'), nullable=False)
+    subject_id = Column(Integer, ForeignKey('subjects.id'), nullable=False)
+    class_id = Column(Integer, ForeignKey('classes.id'), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)

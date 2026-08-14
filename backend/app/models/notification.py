@@ -1,70 +1,39 @@
-"""Notification Queue and Log Models"""
+"""Notification Queue and Log Models."""
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+
+from app.db import Base, ModelMixin
 
 
-class NotificationTemplate:
-    """Reusable WhatsApp message template."""
+class NotificationTemplate(Base, ModelMixin):
+    __tablename__ = 'notification_templates'
 
-    def __init__(self, id=None, name=None, display_name=None, content=None,
-                 variables='', is_active=True):
-        self.id = id
-        self.name = name
-        self.display_name = display_name
-        self.content = content
-        self.variables = variables
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'display_name': self.display_name,
-            'content': self.content,
-            'variables': self.variables,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64), nullable=False)
+    display_name = Column(String(120), nullable=True)
+    content = Column(Text, nullable=True)
+    variables = Column(String(255), nullable=True, default='')
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
-class NotificationQueue:
-    """Notification queued for async processing."""
+class NotificationQueue(Base, ModelMixin):
+    __tablename__ = 'notification_queue'
 
-    def __init__(self, id=None, session_id=None, recipient_number=None,
-                 message=None, status='PENDING', created_at=None):
-        self.id = id
-        self.session_id = session_id
-        self.recipient_number = recipient_number
-        self.message = message
-        self.status = status
-        self.created_at = created_at
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'session_id': self.session_id,
-            'recipient_number': self.recipient_number,
-            'message': self.message,
-            'status': self.status,
-            'created_at': self.created_at,
-        }
+    id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, ForeignKey('attendance_sessions.id'), nullable=True)
+    recipient_number = Column(String(32), nullable=True)
+    message = Column(Text, nullable=True)
+    status = Column(String(16), nullable=False, default='PENDING')
+    created_at = Column(String(32), nullable=True)
 
 
-class NotificationLog:
-    """Delivery log entry."""
+class NotificationLog(Base, ModelMixin):
+    __tablename__ = 'notification_logs'
 
-    def __init__(self, id=None, queue_id=None, recipient_number=None,
-                 status='PENDING', error=None, sent_at=None):
-        self.id = id
-        self.queue_id = queue_id
-        self.recipient_number = recipient_number
-        self.status = status
-        self.error = error
-        self.sent_at = sent_at
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'queue_id': self.queue_id,
-            'recipient_number': self.recipient_number,
-            'status': self.status,
-            'error': self.error,
-            'sent_at': self.sent_at,
-        }
+    id = Column(Integer, primary_key=True)
+    queue_id = Column(Integer, ForeignKey('notification_queue.id'), nullable=True)
+    recipient_number = Column(String(32), nullable=True)
+    status = Column(String(16), nullable=False, default='PENDING')
+    error = Column(Text, nullable=True)
+    sent_at = Column(String(32), nullable=True)

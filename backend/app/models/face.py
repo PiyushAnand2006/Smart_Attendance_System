@@ -1,21 +1,14 @@
-"""Face Recognition Models"""
+"""Face Recognition Models."""
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+
+from app.db import Base, ModelMixin
 
 
-class FaceEmbedding:
-    """Stored face embedding for a student."""
+class FaceEmbedding(Base, ModelMixin):
+    __tablename__ = 'face_embeddings'
 
-    def __init__(self, id=None, student_id=None, embedding=None,
-                 samples=0, is_active=True):
-        self.id = id
-        self.student_id = student_id
-        self.embedding = embedding
-        self.samples = samples
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'student_id': self.student_id,
-            'samples': self.samples,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'), nullable=False, unique=True)
+    embedding = Column(Text, nullable=True)
+    samples = Column(Integer, nullable=False, default=0)
+    is_active = Column(Boolean, nullable=False, default=True)

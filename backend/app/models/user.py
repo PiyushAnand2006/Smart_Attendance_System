@@ -1,26 +1,21 @@
-"""User Model"""
+"""User Model (admin / faculty / student)."""
+from sqlalchemy import Boolean, Column, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class User:
-    """Application user (admin / faculty / student)."""
+class User(Base, ModelMixin):
+    __tablename__ = 'users'
 
-    def __init__(self, id=None, user_id=None, email=None, first_name=None,
-                 last_name=None, role='student', is_active=True):
-        self.id = id
-        self.user_id = user_id
-        self.email = email
-        self.first_name = first_name
-        self.last_name = last_name
-        self.role = role
-        self.is_active = is_active
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(32), unique=True, nullable=False)
+    email = Column(String(120), unique=True, nullable=False, index=True)
+    password = Column(String(128), nullable=False)
+    first_name = Column(String(64), nullable=False, default='')
+    last_name = Column(String(64), nullable=False, default='')
+    role = Column(String(20), nullable=False, default='student')
+    is_active = Column(Boolean, nullable=False, default=True)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'email': self.email,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'role': self.role,
-            'is_active': self.is_active,
-        }
+    def to_dict(self, exclude=None):
+        # Never leak the password hash.
+        return super().to_dict(exclude=(exclude or set()) | {'password'})

@@ -1,27 +1,21 @@
-"""Faculty Model"""
+"""Faculty Model."""
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class Faculty:
-    """Faculty member."""
+class Faculty(Base, ModelMixin):
+    __tablename__ = 'faculty'
 
-    def __init__(self, id=None, faculty_id=None, user_id=None, first_name=None,
-                 last_name=None, department=None, is_active=True):
-        self.id = id
-        self.faculty_id = faculty_id
-        self.user_id = user_id
-        self.first_name = first_name
-        self.last_name = last_name
-        self.department = department
-        self.is_active = is_active
+    id = Column(Integer, primary_key=True)
+    faculty_id = Column(String(32), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    first_name = Column(String(64), nullable=False, default='')
+    last_name = Column(String(64), nullable=False, default='')
+    department = Column(String(64), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'faculty_id': self.faculty_id,
-            'user_id': self.user_id,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'full_name': f"{self.first_name or ''} {self.last_name or ''}".strip(),
-            'department': self.department,
-            'is_active': self.is_active,
-        }
+    def to_dict(self, exclude=None):
+        d = super().to_dict(exclude=exclude or set())
+        d['full_name'] = f"{self.first_name or ''} {self.last_name or ''}".strip()
+        return d

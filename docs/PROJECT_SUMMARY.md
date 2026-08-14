@@ -6,7 +6,7 @@ A complete intelligent multi-modal attendance & parent notification system.
 
 ### Backend (Python Flask)
 - **Minimal Backend** (`backend/app_minimal.py`): standalone API with in-memory storage
-- **Full Backend** (`backend/run.py` → `backend/app/app.py`): structured Flask app with JWT auth (PyJWT), 11 blueprints, in-memory store seeded with demo data
+- **Full Backend** (`backend/run.py` → `backend/app/app.py`): structured Flask app with JWT auth (PyJWT), 11 blueprints, SQLite database (SQLAlchemy) seeded with demo data on startup
 - **Models**: User, Student, ParentGuardian, Faculty, ClassModel, Section, Subject, FacultySubject, AttendanceSession, AttendanceRecord, FaceEmbedding, QRIdentity, QRToken, NotificationTemplate, NotificationQueue, NotificationLog, AttendanceThreshold, AcademicYear, Timetable
 - **Routes**: auth, students, faculty, admin, attendance, reports, notifications, subjects, classes, face, qr
 - Dependencies: Flask, flask-cors, PyJWT (see `backend/requirements.txt`)

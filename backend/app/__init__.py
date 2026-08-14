@@ -5,14 +5,15 @@ from app.app import create_app
 
 
 class _DB:
-    """Compatibility shim: run.py calls db.create_all().
+    """Compatibility shim: run.py historically called db.create_all().
 
-    The in-memory store is auto-seeded on import, so no schema setup is
-    required.
+    The SQLite database is created and seeded inside create_app(); this
+    shim simply ensures the schema exists if invoked directly.
     """
 
     def create_all(self):
-        pass
+        from app.db import init_db
+        init_db()
 
 
 db = _DB()

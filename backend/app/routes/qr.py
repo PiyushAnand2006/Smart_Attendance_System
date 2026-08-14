@@ -1,14 +1,22 @@
 """QR Code Routes"""
-from flask import Blueprint, request
-from app.store import db
+from flask import Blueprint, current_app, request
+from app.db import session_scope
+from app.models.attendance import AttendanceRecord, AttendanceSession
+from app.models.qr import QRToken
+from app.models.student import Student
+from app.models.subject import Subject
 from app.utils.jwt_utils import role_required
 from datetime import datetime, timedelta
 import uuid
 
 qr_bp = Blueprint('qr', __name__)
 
-# Ephemeral session QR tokens (kept in memory)
-qr_tokens = {}
+
+def _expiry_seconds():
+    try:
+        return int(current_app.config.get('QR_TOKEN_EXPIRY_SECONDS', 60))
+    except (TypeError, ValueError):
+        return 60
 
 
 @qr_bp.route('/generate', methods=['POST'])
@@ -18,15 +26,15 @@ def generate(current_user_id, current_role):
     session_id = data.get('session_id')
     if not session_id:
         return {'status': 'error', 'message': 'session_id is required'}, 400
-
-    token = f'TKN{uuid.uuid4().hex[:12].upper()}'
-    expires_at = datetime.utcnow() + timedelta(seconds=60)
-    qr_tokens[token] = {'session_id': int(session_id), 'expires_at': expires_at}
-
-    return {
-        'status': 'success',
-        'data': {'token': token, 'expires_at': expires_at.isoformat(), 'expires_in': 60},
-    }
+    with session_scope() as s:
+        sess = s.query(AttendanceSession).filter_by(id=int(session_id)).first()
+        if not sess:
+            return {'status': 'error', 'message': 'Session not found'}, 404
+        token = f'TKN{uuid.uuid4().hex[:12].upper()}'
+        expires_at = datetime.utcnow() + timedelta(seconds=_expiry_seconds())
+        s.add(QRToken(token=token, session_id=int(session_id), expires_at=expires_at.isoformat(), is_active=True))
+        s.flush()
+        return {'status': 'success', 'data': {'token': token, 'expires_at': expires_at.isoformat(), 'expires_in': _expiry_seconds()}}
 
 
 @qr_bp.route('/scan', methods=['POST'])
@@ -35,41 +43,35 @@ def scan(current_user_id, current_role):
     data = request.get_json(silent=True) or {}
     token = data.get('token') or data.get('qr_code')
     student_id = data.get('student_id')
-
     if not token:
         return {'status': 'error', 'message': 'QR token is required'}, 400
+    with session_scope() as s:
+        entry = s.query(QRToken).filter_by(token=token, is_active=True).first()
+        if not entry:
+            return {'status': 'error', 'message': 'Invalid or expired QR code'}, 400
+        if datetime.fromisoformat(entry.expires_at) < datetime.utcnow():
+            entry.is_active = False
+            s.flush()
+            return {'status': 'error', 'message': 'QR code expired'}, 400
+        session_id = entry.session_id
+        if not student_id:
+            return {'status': 'error', 'message': 'student_id is required'}, 400
+        student_id = int(student_id)
 
-    entry = qr_tokens.get(token)
-    if not entry:
-        return {'status': 'error', 'message': 'Invalid or expired QR code'}, 400
-    if entry['expires_at'] < datetime.utcnow():
-        qr_tokens.pop(token, None)
-        return {'status': 'error', 'message': 'QR code expired'}, 400
+        if current_role == 'student':
+            student = s.query(Student).filter_by(student_id=current_user_id).first()
+            if not student or student.id != student_id:
+                return {'status': 'error', 'message': 'You can only mark your own attendance'}, 403
 
-    session_id = entry['session_id']
-    if not student_id:
-        return {'status': 'error', 'message': 'student_id is required'}, 400
+        if s.query(AttendanceRecord).filter_by(student_id=student_id, session_id=session_id).first():
+            return {'status': 'error', 'message': 'Attendance already marked'}, 400
 
-    # Students may only mark their own attendance
-    if current_role == 'student':
-        student = next((s for s in db['students'] if s['student_id'] == current_user_id), None)
-        if not student or student['id'] != int(student_id):
-            return {'status': 'error', 'message': 'You can only mark your own attendance'}, 403
-
-    if any(r['student_id'] == int(student_id) and r['session_id'] == session_id for r in db['attendance_records']):
-        return {'status': 'error', 'message': 'Attendance already marked'}, 400
-
-    record = {
-        'id': len(db['attendance_records']) + 1,
-        'student_id': int(student_id),
-        'session_id': session_id,
-        'status': 'PRESENT',
-        'attendance_method': 'QR',
-        'attendance_date': datetime.utcnow().date().isoformat(),
-        'created_at': datetime.utcnow().isoformat(),
-    }
-    db['attendance_records'].append(record)
-    return {'status': 'success', 'message': 'Attendance marked via QR', 'data': record}, 201
+        record = AttendanceRecord(student_id=student_id, session_id=session_id, status='PRESENT',
+                                  attendance_method='QR', attendance_date=datetime.utcnow().date(),
+                                  created_at=datetime.utcnow())
+        s.add(record)
+        s.flush()
+        return {'status': 'success', 'message': 'Attendance marked via QR', 'data': record.to_dict()}, 201
 
 
 @qr_bp.route('/scan-my', methods=['POST'])
@@ -79,28 +81,26 @@ def scan_my(current_user_id, current_role):
     token = data.get('token') or data.get('qr_code')
     if not token:
         return {'status': 'error', 'message': 'QR token is required'}, 400
-    entry = qr_tokens.get(token)
-    if not entry:
-        return {'status': 'error', 'message': 'Invalid or expired QR code'}, 400
-    if entry['expires_at'] < datetime.utcnow():
-        qr_tokens.pop(token, None)
-        return {'status': 'error', 'message': 'QR code expired'}, 400
-    session_id = entry['session_id']
-    student = next((s for s in db['students'] if s['student_id'] == current_user_id), None)
-    if not student:
-        return {'status': 'error', 'message': 'Student profile not found'}, 404
-    if any(r['student_id'] == student['id'] and r['session_id'] == session_id for r in db['attendance_records']):
-        return {'status': 'error', 'message': 'Attendance already marked'}, 400
-    record = {
-        'id': len(db['attendance_records']) + 1,
-        'student_id': student['id'],
-        'session_id': session_id,
-        'status': 'PRESENT',
-        'attendance_method': 'QR',
-        'attendance_date': datetime.utcnow().date().isoformat(),
-        'created_at': datetime.utcnow().isoformat(),
-    }
-    db['attendance_records'].append(record)
-    session = next((s for s in db['attendance_sessions'] if s['id'] == session_id), None)
-    subject = next((s for s in db['subjects'] if s['id'] == (session['subject_id'] if session else 0)), None)
-    return {'status': 'success', 'message': 'Attendance marked!', 'data': {**record, 'subject_name': subject['name'] if subject else None}}, 201
+    with session_scope() as s:
+        entry = s.query(QRToken).filter_by(token=token, is_active=True).first()
+        if not entry:
+            return {'status': 'error', 'message': 'Invalid or expired QR code'}, 400
+        if datetime.fromisoformat(entry.expires_at) < datetime.utcnow():
+            entry.is_active = False
+            s.flush()
+            return {'status': 'error', 'message': 'QR code expired'}, 400
+        session_id = entry.session_id
+        student = s.query(Student).filter_by(student_id=current_user_id).first()
+        if not student:
+            return {'status': 'error', 'message': 'Student profile not found'}, 404
+        if s.query(AttendanceRecord).filter_by(student_id=student.id, session_id=session_id).first():
+            return {'status': 'error', 'message': 'Attendance already marked'}, 400
+        record = AttendanceRecord(student_id=student.id, session_id=session_id, status='PRESENT',
+                                  attendance_method='QR', attendance_date=datetime.utcnow().date(),
+                                  created_at=datetime.utcnow())
+        s.add(record)
+        s.flush()
+        sess = s.query(AttendanceSession).filter_by(id=session_id).first()
+        subject = s.query(Subject).filter_by(id=sess.subject_id).first() if sess else None
+        return {'status': 'success', 'message': 'Attendance marked!',
+                'data': {**record.to_dict(), 'subject_name': subject.name if subject else None}}, 201

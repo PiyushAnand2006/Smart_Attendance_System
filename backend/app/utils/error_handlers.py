@@ -27,6 +27,23 @@ def register_error_handlers(app):
         logger.error(f'Internal error: {str(e)}')
         return jsonify({'status': 'error', 'message': 'Internal server error', 'code': 'INTERNAL_ERROR'}), 500
 
+    @app.route('/')
+    def index():
+        return jsonify({
+            'status': 'healthy',
+            'service': 'SmartAttend API',
+            'docs': {
+                'login': 'POST /api/auth/login',
+                'health': 'GET /health',
+                'endpoints': '/api/auth/*, /api/students, /api/faculty, /api/admin, /api/attendance, /api/reports, /api/notifications, /api/subjects, /api/classes, /api/face, /api/qr',
+            },
+            'demo_credentials': {
+                'admin': 'admin@smartattend.com / admin123',
+                'faculty': 'faculty@smartattend.com / faculty123',
+                'student': 'student@smartattend.com / student123',
+            },
+        })
+
     @app.route('/health')
     def health():
         return jsonify({'status': 'healthy', 'service': 'SmartAttend API'})

@@ -1,13 +1,28 @@
 """Application Factory
 
-The full backend runs on Flask + flask-cors + PyJWT (the packages that are
-installed). Data is stored in an in-memory store (see app.store), seeded with
-demo data so every feature works out of the box.
+The full backend runs on Flask + flask-cors + PyJWT (installed dependencies) with
+a SQLite database (SQLAlchemy). Demo data is seeded on startup so every feature
+works out of the box.
 """
+from datetime import date, datetime
+from decimal import Decimal
+
 from flask import Flask
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 from config import config
 import os
+
+
+class SmartAttendJSONProvider(DefaultJSONProvider):
+    """JSON encoder that understands datetimes, dates and decimals."""
+
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 
 def create_app(config_name=None):
@@ -17,7 +32,17 @@ def create_app(config_name=None):
 
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    app.json = SmartAttendJSONProvider(app)
+    # Accept both "/api/x" and "/api/x/" without redirecting.
+    app.url_map.strict_slashes = False
     CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # Database setup
+    from app.db import init_db, session_scope
+    from app.store import seed_db
+    init_db()
+    with session_scope() as session:
+        seed_db(session)
 
     # Register blueprints
     from app.routes.auth import auth_bp

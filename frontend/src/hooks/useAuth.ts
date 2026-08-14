@@ -7,6 +7,8 @@ export function useAuth(allowedRoles?: string[]) {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  // Stable key so an array literal passed each render doesn't re-trigger the effect.
+  const rolesKey = allowedRoles?.join(',') ?? '';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -21,9 +23,10 @@ export function useAuth(allowedRoles?: string[]) {
       return;
     }
     const userData = localStorage.getItem('user');
-    setUser(userData ? JSON.parse(userData) : null);
+    if (userData) setUser(JSON.parse(userData));
     setLoading(false);
-  }, [pathname, allowedRoles, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, rolesKey, router]);
 
   return { user, loading, role: typeof window !== 'undefined' ? localStorage.getItem('role') : null };
 }

@@ -1,40 +1,29 @@
-"""QR Code Models"""
+"""QR Code Models."""
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+
+from app.db import Base, ModelMixin
 
 
-class QRIdentity:
-    """Permanent QR identity assigned to a student."""
+class QRIdentity(Base, ModelMixin):
+    __tablename__ = 'qr_identities'
 
-    def __init__(self, id=None, student_id=None, qr_identifier=None, is_active=True):
-        self.id = id
-        self.student_id = student_id
-        self.qr_identifier = qr_identifier
-        self.is_active = is_active
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'student_id': self.student_id,
-            'qr_identifier': self.qr_identifier,
-            'is_active': self.is_active,
-        }
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey('students.id'), nullable=False, unique=True)
+    qr_identifier = Column(String(64), unique=True, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)
 
 
-class QRToken:
-    """Ephemeral token generated for a live QR attendance session."""
+class QRToken(Base, ModelMixin):
+    """Ephemeral token generated for a live QR attendance session.
 
-    def __init__(self, id=None, session_id=None, token=None,
-                 expires_at=None, is_active=True):
-        self.id = id
-        self.session_id = session_id
-        self.token = token
-        self.expires_at = expires_at
-        self.is_active = is_active
+    Kept in the database for durability across restarts but expired by
+    ``expires_at``.
+    """
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'session_id': self.session_id,
-            'token': self.token,
-            'expires_at': self.expires_at,
-            'is_active': self.is_active,
-        }
+    __tablename__ = 'qr_tokens'
+
+    id = Column(Integer, primary_key=True)
+    token = Column(String(64), unique=True, nullable=False)
+    session_id = Column(Integer, ForeignKey('attendance_sessions.id'), nullable=False)
+    expires_at = Column(String(32), nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)

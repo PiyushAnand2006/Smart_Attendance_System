@@ -7,7 +7,9 @@ import { Bell } from 'lucide-react';
 export default function NotificationsPage() {
   const { loading: al } = useAuth(['student']);
   const [queue, setQueue] = useState<any[]>([]);
-  useEffect(() => { if (!al) api.get('/notifications/queue').then((r: any) => setQueue(r.data || [])); }, [al]);
+  useEffect(() => {
+    if (!al) api.get('/notifications/mine').then((r: any) => setQueue(r.data || [])).catch(() => setQueue([]));
+  }, [al]);
   if (al) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl text-accent">&#9696;</div></div>;
   const mine = queue.filter((n: any) => n.status === 'SENT');
   return (

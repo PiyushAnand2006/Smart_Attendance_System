@@ -8,7 +8,7 @@ Intelligent Multi-Modal Attendance & Parent Notification System
 
 ```bash
 pip install -r backend/requirements.txt
-# i.e. Flask, flask-cors, PyJWT
+# i.e. Flask, flask-cors, PyJWT, SQLAlchemy
 ```
 
 ### 2. Start the Backend (choose one)
