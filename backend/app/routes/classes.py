@@ -39,3 +39,15 @@ def get_class(cid, current_user_id, current_role):
         if not cls:
             return {'status': 'error', 'message': 'Class not found'}, 404
         return {'status': 'success', 'data': cls.to_dict()}
+
+
+@classes_bp.route('/<int:cid>', methods=['DELETE'])
+@role_required('admin')
+def delete_class(cid, current_user_id, current_role):
+    with session_scope() as s:
+        cls = s.query(ClassModel).filter_by(id=cid).first()
+        if not cls:
+            return {'status': 'error', 'message': 'Class not found'}, 404
+        cls.is_active = False
+        s.flush()
+        return {'status': 'success', 'message': 'Class deleted'}

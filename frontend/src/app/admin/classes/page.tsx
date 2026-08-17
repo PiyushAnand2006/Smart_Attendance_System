@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Plus, X, Users } from 'lucide-react';
+import { Building2, Plus, X, Users, Trash2 } from 'lucide-react';
 
 export default function ClassesPage() {
   const { loading: al } = useAuth(['admin']);
@@ -10,8 +10,13 @@ export default function ClassesPage() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ name: '', code: '', department: 'Engineering' });
   const [loading, setLoading] = useState(true);
-  useEffect(() => { if (!al) api.get('/classes').then((r: any) => { setClasses(r.data || []); setLoading(false); }); }, [al]);
-  const handleAdd = async () => { await api.post('/classes', form); setModal(false); setForm({ name: '', code: '', department: 'Engineering' }); api.get('/classes').then((r: any) => setClasses(r.data || [])); };
+  const fetchClasses = () => api.get('/classes').then((r: any) => setClasses(r.data || [])).catch(() => {});
+  useEffect(() => { if (!al) { fetchClasses(); setLoading(false); } }, [al]);
+  const handleAdd = async () => { await api.post('/classes', form); setModal(false); setForm({ name: '', code: '', department: 'Engineering' }); fetchClasses(); };
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this class?')) return;
+    await api.delete(`/classes/${id}`).then(() => fetchClasses()).catch(() => {});
+  };
   if (al || loading) return <><div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl text-accent">&#9696;</div></div></>;
   return (
     <div className="space-y-6 animate-fade-in">
@@ -19,7 +24,7 @@ export default function ClassesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {classes.map((c: any, i: number) => (
           <div key={c.id} className="glass-card glass-card-hover p-5" style={{ animationDelay: i*50+'ms', animationFillMode: 'both' }}>
-            <div className="flex items-center gap-3 mb-3"><div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center text-warning"><Building2 size={20} /></div><div><h3 className="font-semibold text-white">{c.name}</h3><p className="text-xs text-slate-400">{c.code} &middot; {c.department}</p></div></div>
+            <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center text-warning"><Building2 size={20} /></div><div><h3 className="font-semibold text-white">{c.name}</h3><p className="text-xs text-slate-400">{c.code} &middot; {c.department}</p></div></div><button onClick={() => handleDelete(c.id)} className="text-slate-400 hover:text-danger transition-colors"><Trash2 size={16} /></button></div>
           </div>
         ))}
       </div>

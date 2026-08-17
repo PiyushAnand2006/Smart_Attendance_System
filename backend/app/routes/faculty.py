@@ -7,7 +7,8 @@ from app.models.student import ParentGuardian, Student
 from app.models.subject import Subject
 from app.models.qr import QRIdentity
 from app.utils.jwt_utils import role_required
-from datetime import date
+from datetime import date, datetime
+import uuid
 
 faculty_bp = Blueprint('faculty', __name__)
 
@@ -59,6 +60,37 @@ def get_schedule(current_user_id, current_role):
                 'status': sess.status, 'scheduled_date': sess.scheduled_date.isoformat() if sess.scheduled_date else None,
             })
         return {'status': 'success', 'data': result}
+
+
+@faculty_bp.route('/schedule', methods=['POST'])
+@role_required('faculty', 'admin')
+def create_schedule(current_user_id, current_role):
+    data = request.get_json(silent=True) or {}
+    subject_id = data.get('subject_id') or data.get('subject')
+    class_id = data.get('class_id') or data.get('class')
+    if not subject_id or not class_id:
+        return {'status': 'error', 'message': 'subject_id and class_id are required'}, 400
+
+    with session_scope() as s:
+        subject = s.query(Subject).filter_by(id=int(subject_id)).first()
+        if not subject:
+            return {'status': 'error', 'message': 'Subject not found'}, 404
+        cls = s.query(ClassModel).filter_by(id=int(class_id)).first()
+        if not cls:
+            return {'status': 'error', 'message': 'Class not found'}, 404
+
+        sched = data.get('scheduled_date')
+        scheduled_date = date.fromisoformat(sched) if sched else date.today()
+        sess = AttendanceSession(
+            session_id=f'SES{uuid.uuid4().hex[:8].upper()}',
+            subject_id=int(subject_id), class_id=int(class_id),
+            faculty_id=data.get('faculty_id', current_user_id),
+            attendance_mode=(data.get('mode') or data.get('attendance_mode') or 'FACE').upper(),
+            status='active', scheduled_date=scheduled_date, created_at=datetime.utcnow(),
+        )
+        s.add(sess)
+        s.flush()
+        return {'status': 'success', 'message': 'Class scheduled', 'data': sess.to_dict()}, 201
 
 
 @faculty_bp.route('/students', methods=['GET'])

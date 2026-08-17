@@ -1,5 +1,5 @@
 """Admin Routes"""
-from flask import Blueprint
+from flask import Blueprint, request
 from app.db import session_scope
 from app.models.attendance import AttendanceRecord, AttendanceSession
 from app.models.class_ import ClassModel
@@ -7,6 +7,7 @@ from app.models.faculty import Faculty
 from app.models.notification import NotificationQueue
 from app.models.student import Student
 from app.models.subject import Subject
+from app.models.user import User
 from app.utils.jwt_utils import role_required
 from datetime import date
 
@@ -64,3 +65,54 @@ def get_stats(current_user_id, current_role):
                 'notifications': s.query(NotificationQueue).count(),
             }
         }
+
+
+@admin_bp.route('/faculty', methods=['GET'])
+@role_required('admin')
+def get_faculty(current_user_id, current_role):
+    with session_scope() as s:
+        faculty = []
+        for f in s.query(Faculty).filter_by(is_active=True).all():
+            user = s.query(User).filter_by(id=f.user_id).first() if f.user_id else None
+            faculty.append({
+                **f.to_dict(),
+                'email': user.email if user else None,
+                'is_active': user.is_active if user else f.is_active,
+            })
+        return {'status': 'success', 'data': faculty, 'meta': {'total': len(faculty)}}
+
+
+@admin_bp.route('/faculty/<int:fid>', methods=['DELETE'])
+@role_required('admin')
+def delete_faculty(fid, current_user_id, current_role):
+    with session_scope() as s:
+        f = s.query(Faculty).filter_by(id=fid).first()
+        if not f:
+            return {'status': 'error', 'message': 'Faculty not found'}, 404
+        f.is_active = False
+        if f.user_id:
+            user = s.query(User).filter_by(id=f.user_id).first()
+            if user:
+                user.is_active = False
+        s.flush()
+        return {'status': 'success', 'message': 'Faculty deleted'}
+
+
+@admin_bp.route('/faculty/<int:fid>', methods=['PUT'])
+@role_required('admin')
+def update_faculty(fid, current_user_id, current_role):
+    data = request.get_json(silent=True) or {}
+    with session_scope() as s:
+        f = s.query(Faculty).filter_by(id=fid).first()
+        if not f:
+            return {'status': 'error', 'message': 'Faculty not found'}, 404
+        for key in ('first_name', 'last_name', 'department', 'is_active'):
+            if key in data:
+                setattr(f, key, data[key])
+        if 'is_active' in data and f.user_id:
+            user = s.query(User).filter_by(id=f.user_id).first()
+            if user:
+                user.is_active = data['is_active']
+        s.flush()
+        user = s.query(User).filter_by(id=f.user_id).first() if f.user_id else None
+        return {'status': 'success', 'message': 'Faculty updated', 'data': {**f.to_dict(), 'email': user.email if user else None, 'is_active': user.is_active if user else f.is_active}}

@@ -24,6 +24,7 @@ export const api = {
     apiFetch<T>(url, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   put: <T = any>(url: string, body?: any) =>
     apiFetch<T>(url, { method: 'PUT', body: body ? JSON.stringify(body) : undefined }),
+  delete: <T = any>(url: string) => apiFetch<T>(url, { method: 'DELETE' }),
 };
 
 export function logout() {
