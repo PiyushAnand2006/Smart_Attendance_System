@@ -64,11 +64,14 @@ def get_session(sid, current_user_id, current_role):
             return {'status': 'error', 'message': 'Session not found'}, 404
         records = s.query(AttendanceRecord).filter_by(session_id=sid).all()
         subject = s.query(Subject).filter_by(id=sess.subject_id).first()
+        cls = s.query(ClassModel).filter_by(id=sess.class_id).first()
         return {
             'status': 'success',
             'data': {
                 **sess.to_dict(),
                 'subject_name': subject.name if subject else None,
+                'class_name': cls.name if cls else None,
+                'class_code': cls.code if cls else None,
                 'records': [r.to_dict() for r in records],
                 'present': sum(1 for r in records if r.status in ('PRESENT', 'LATE')),
             }
@@ -110,6 +113,18 @@ def mark_attendance(sid, current_user_id, current_role):
                 ))
         s.flush()
         return {'status': 'success', 'message': 'Attendance marked', 'data': record.to_dict()}, 201
+
+
+@attendance_bp.route('/sessions/<int:sid>/start', methods=['POST'])
+@role_required('faculty', 'admin')
+def start_session(sid, current_user_id, current_role):
+    with session_scope() as s:
+        sess = s.query(AttendanceSession).filter_by(id=sid).first()
+        if not sess:
+            return {'status': 'error', 'message': 'Session not found'}, 404
+        sess.status = 'active'
+        s.flush()
+        return {'status': 'success', 'message': 'Session started', 'data': sess.to_dict()}
 
 
 @attendance_bp.route('/sessions/<int:sid>/end', methods=['POST'])
