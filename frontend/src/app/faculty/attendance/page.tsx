@@ -7,7 +7,7 @@ export default function FacultyAttendance() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/faculty/attendance/qr');
+    router.replace('/faculty/schedule');
   }, [router]);
 
   return (
