@@ -12,6 +12,14 @@ import uuid
 qr_bp = Blueprint('qr', __name__)
 
 
+def _extract_token(raw):
+    """Accept both raw tokens (TKN...) and full scan URLs."""
+    token = (raw or '').strip()
+    if 'scan/' in token:
+        token = token.rstrip('/').split('/')[-1]
+    return token
+
+
 def _expiry_seconds():
     try:
         return int(current_app.config.get('QR_TOKEN_EXPIRY_SECONDS', 60))
@@ -41,7 +49,7 @@ def generate(current_user_id, current_role):
 @role_required('student', 'faculty', 'admin')
 def scan(current_user_id, current_role):
     data = request.get_json(silent=True) or {}
-    token = data.get('token') or data.get('qr_code')
+    token = _extract_token(data.get('token') or data.get('qr_code'))
     student_id = data.get('student_id')
     if not token:
         return {'status': 'error', 'message': 'QR token is required'}, 400
@@ -78,7 +86,7 @@ def scan(current_user_id, current_role):
 @role_required('student')
 def scan_my(current_user_id, current_role):
     data = request.get_json(silent=True) or {}
-    token = data.get('token') or data.get('qr_code')
+    token = _extract_token(data.get('token') or data.get('qr_code'))
     if not token:
         return {'status': 'error', 'message': 'QR token is required'}, 400
     with session_scope() as s:
