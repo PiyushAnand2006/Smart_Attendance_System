@@ -3,7 +3,7 @@ import '../styles/globals.css';
 
 export const metadata: Metadata = {
   title: 'SmartAttend - Intelligent Attendance System',
-  description: 'Multi-modal attendance tracking with face recognition and QR codes',
+  description: 'Multi-modal attendance tracking with QR codes',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -14,7 +14,7 @@ export default function SettingsPage() {
           <div><label className="text-xs text-slate-400 mb-1 block">Minimum Attendance Threshold (%)</label><input className="input-field" defaultValue="75" type="number" /></div>
           <div><label className="text-xs text-slate-400 mb-1 block">Late Threshold (minutes)</label><input className="input-field" defaultValue="15" type="number" /></div>
           <div><label className="text-xs text-slate-400 mb-1 block">QR Token Expiry (seconds)</label><input className="input-field" defaultValue="300" type="number" /></div>
-          <div><label className="text-xs text-slate-400 mb-1 block">Face Recognition Tolerance</label><input className="input-field" defaultValue="0.6" step="0.1" type="number" /></div>
+
         </div>
         <div className="border-t border-slate-700 pt-4"><h3 className="font-semibold text-white flex items-center gap-2 mb-4"><Bell size={18} className="text-accent" /> Notification Settings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
