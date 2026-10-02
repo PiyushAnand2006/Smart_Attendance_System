@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, X, UserCheck, QrCode, Camera } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, X, QrCode } from 'lucide-react';
 import { api } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -17,7 +17,6 @@ export default function StudentsPage() {
 
   const statusBadge = (s: string) => {
     if (s === 'ready' || s === 'READY') return 'badge-success';
-    if (s === 'face_enrolled') return 'badge-info';
     if (s === 'incomplete' || s === 'INCOMPLETE') return 'badge-danger';
     return 'badge-warning';
   };
@@ -45,13 +44,12 @@ export default function StudentsPage() {
         </div>
       </div>
       <div className="glass-card overflow-hidden">
-        <table className="w-full"><thead><tr className="text-left text-xs text-slate-400 border-b border-slate-700"><th className="p-4">Student</th><th className="p-4">Roll No</th><th className="p-4">Dept</th><th className="p-4">Face</th><th className="p-4">QR</th><th className="p-4">Status</th></tr></thead>
+        <table className="w-full"><thead><tr className="text-left text-xs text-slate-400 border-b border-slate-700"><th className="p-4">Student</th><th className="p-4">Roll No</th><th className="p-4">Dept</th><th className="p-4">QR</th><th className="p-4">Status</th></tr></thead>
         <tbody>{filtered.map((s: any) => (
           <tr key={s.id} className="table-row-hover">
             <td className="p-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-highlight flex items-center justify-center text-white text-xs font-bold">{s.first_name?.[0]}</div><span className="text-white text-sm font-medium">{s.first_name} {s.last_name}</span></div></td>
             <td className="p-4 text-slate-300 text-sm">{s.student_id}</td>
             <td className="p-4 text-slate-300 text-sm">{s.department}</td>
-            <td className="p-4">{s.face ? <UserCheck size={16} className="text-success" /> : <Camera size={16} className="text-slate-500" />}</td>
             <td className="p-4">{s.qr ? <QrCode size={16} className="text-success" /> : <span className="text-slate-500 text-xs">No</span>}</td>
             <td className="p-4"><span className={statusBadge(s.status)}>{s.status}</span></td>
           </tr>
