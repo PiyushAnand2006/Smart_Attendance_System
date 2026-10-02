@@ -17,6 +17,7 @@ def login():
     data = request.get_json(silent=True) or {}
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+    selected_role = (data.get('role') or '').strip().lower()
 
     with session_scope() as s:
         user = s.query(User).filter_by(email=email).first()
@@ -24,6 +25,8 @@ def login():
             return {'status': 'error', 'message': 'Invalid email or password'}, 401
         if not user.is_active:
             return {'status': 'error', 'message': 'Account is disabled'}, 403
+        if selected_role and selected_role != user.role:
+            return {'status': 'error', 'message': f'Account is not a {selected_role}'}, 403
 
         token = create_access_token(user.user_id, user.role)
         return {
