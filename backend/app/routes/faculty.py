@@ -85,8 +85,8 @@ def create_schedule(current_user_id, current_role):
             session_id=f'SES{uuid.uuid4().hex[:8].upper()}',
             subject_id=int(subject_id), class_id=int(class_id),
             faculty_id=data.get('faculty_id', current_user_id),
-            attendance_mode=(data.get('mode') or data.get('attendance_mode') or 'FACE').upper(),
-            status='active', scheduled_date=scheduled_date, created_at=datetime.utcnow(),
+            attendance_mode=(data.get('mode') or data.get('attendance_mode') or 'QR').upper(),
+            status='scheduled', scheduled_date=scheduled_date, created_at=datetime.utcnow(),
         )
         s.add(sess)
         s.flush()
@@ -102,18 +102,9 @@ def get_faculty_students(current_user_id, current_role):
             parent = s.query(ParentGuardian).filter_by(student_id=st.id).first()
             qr = s.query(QRIdentity).filter_by(student_id=st.id).first()
             students.append({**st.to_dict(), 'parent': bool(parent),
-                             'face': st.enrollment_status in ('ready', 'face_enrolled'),
+
                              'qr': bool(qr and qr.is_active)})
         return {'status': 'success', 'data': students}
 
 
-@faculty_bp.route('/students/<int:sid>/enroll-face', methods=['POST'])
-@role_required('faculty', 'admin')
-def enroll_face(sid, current_user_id, current_role):
-    with session_scope() as s:
-        st = s.query(Student).filter_by(id=sid).first()
-        if not st:
-            return {'status': 'error', 'message': 'Student not found'}, 404
-        st.enrollment_status = 'face_enrolled'
-        s.flush()
-        return {'status': 'success', 'message': f'Face enrolled for {st.first_name}', 'data': {'student_id': sid, 'status': 'face_enrolled'}}
+
