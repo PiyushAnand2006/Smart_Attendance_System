@@ -19,7 +19,6 @@ def _student_summary(s, session):
     return {
         **s.to_dict(),
         'parent': bool(parent),
-        'face': s.enrollment_status in ('ready', 'face_enrolled'),
         'qr': bool(qr and qr.is_active),
         'overall_attendance': round(present / len(records) * 100, 1) if records else 0.0,
     }

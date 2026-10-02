@@ -54,7 +54,6 @@ def create_app(config_name=None):
     from app.routes.notifications import notifications_bp
     from app.routes.subjects import subjects_bp
     from app.routes.classes import classes_bp
-    from app.routes.face import face_bp
     from app.routes.qr import qr_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -66,7 +65,6 @@ def create_app(config_name=None):
     app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(classes_bp, url_prefix='/api/classes')
-    app.register_blueprint(face_bp, url_prefix='/api/face')
     app.register_blueprint(qr_bp, url_prefix='/api/qr')
 
     # Register error handlers

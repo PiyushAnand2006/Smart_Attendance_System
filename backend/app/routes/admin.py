@@ -26,7 +26,7 @@ def get_dashboard(current_user_id, current_role):
 
         low_attendance = s.query(Student).filter(
             Student.is_active == True,  # noqa: E712
-            Student.enrollment_status.in_(['incomplete', 'face_required'])
+            Student.enrollment_status.in_(['incomplete'])
         ).count()
 
         sent = s.query(NotificationQueue).filter_by(status='SENT').count()

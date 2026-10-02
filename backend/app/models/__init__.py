@@ -5,7 +5,6 @@ from app.models.faculty import Faculty
 from app.models.class_ import ClassModel, Section
 from app.models.subject import Subject, FacultySubject
 from app.models.attendance import AttendanceSession, AttendanceRecord
-from app.models.face import FaceEmbedding
 from app.models.qr import QRIdentity, QRToken
 from app.models.notification import NotificationTemplate, NotificationQueue, NotificationLog
 from app.models.settings import AttendanceThreshold, AcademicYear, Timetable
@@ -21,7 +20,6 @@ __all__ = [
     'FacultySubject',
     'AttendanceSession',
     'AttendanceRecord',
-    'FaceEmbedding',
     'QRIdentity',
     'QRToken',
     'NotificationTemplate',

@@ -35,7 +35,7 @@ def register_error_handlers(app):
             'docs': {
                 'login': 'POST /api/auth/login',
                 'health': 'GET /health',
-                'endpoints': '/api/auth/*, /api/students, /api/faculty, /api/admin, /api/attendance, /api/reports, /api/notifications, /api/subjects, /api/classes, /api/face, /api/qr',
+                'endpoints': '/api/auth/*, /api/students, /api/faculty, /api/admin, /api/attendance, /api/reports, /api/notifications, /api/subjects, /api/classes, /api/qr',
             },
             'demo_credentials': {
                 'admin': 'admin@smartattend.com / admin123',
